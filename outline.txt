@@ -1,0 +1,66 @@
+Outline:
+
+
+
+function to get price history - args are stock ticker/s, amount of days
+	call alpaca
+	return dataframe
+
+function to get twitter history
+	possibly filter for repeated tweets
+	return signal
+
+function to get news history
+	return signal
+
+function to get reddit history
+	return signal
+
+function to get general sentiment signals history
+	call function to get twitter history
+	call function to get news history
+	call function to get reddit history
+	return combined dataframe of signals
+
+
+function to get sentiment signals history of specific stock - arg is stock ticker
+	call function to get twitter history
+	call function to get news history
+	call function to get reddit history
+	return combined dataframe of signals
+
+function to run machine learning - arg is combined signals and stock history
+	add additional columns for each signal for a daily percent change and a 5 day moving average a 100 day moving average
+	scale
+	train/test split
+	try a few machine learning possibilities, svm, adaboost, possibly neural - try to guess if it will go up or down the following day
+	return buy/sell signal
+
+
+Main function:
+	determine which stocks to pull, one or many
+
+	call function to get price history
+
+	call function to get general sentiment signals history
+
+	call function to get sentiment signals history for specific stock/s
+
+	call function to run machine learning on the price history and signals
+
+	output graphs
+
+
+
+
+
+terms to use in signal search for general:
+green
+renewable
+environment
+climate
+global warming
+climate crisis
+natural disaster
+** added by DT --
+esg investing
