@@ -25,13 +25,13 @@ def get_historical_dataframe (ticker, start_date, end_date, timeframe):
 
 
 # didn't use any of the following yet
-def filter_close_prices(dataframe):
-    df_close = pd.DataFrame()
-    df_close['close'] = dataframe['close']
-    return df_close
+# def filter_close_prices(dataframe):
+#     df_close = pd.DataFrame()
+#     df_close['close'] = dataframe['close']
+#     return df_close
 
-def calc_daily_returns(df_close_prices):
-    daily_returns = 
+# def calc_daily_returns(df_close_prices):
+#     daily_returns = 
 
-df_close_prices.pct_change().dropna()
-    return daily_returns
+# df_close_prices.pct_change().dropna()
+#     return daily_returns
