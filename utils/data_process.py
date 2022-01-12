@@ -6,7 +6,7 @@ def return_rolling_averages(dataframe):
     for w in windows:
         dataframe[w]=dataframe["close"].rolling(w).mean()
 
-# # returns a dataframe with signals for each time a lower moving average crosses a higher length rolling average. the result is when a lower one passes a longer one, return signal plus one. when a lower length average dips below a longer one, return signal negative one.
+# returns a dataframe with signals for each time a lower moving average crosses a higher length rolling average. the result is when a lower one passes a longer one, return signal plus one. when a lower length average dips below a longer one, return signal negative one.
 def return_crossovers(dataframe):
     columns = dataframe.columns
     cross_df = pd.DataFrame(index=dataframe.index)
@@ -14,3 +14,9 @@ def return_crossovers(dataframe):
         for col2 in (range(col+1, len(dataframe.columns))):
             cross_df[str(columns[col]) + " to " + str(columns[col2])] = ((dataframe[columns[col2]] < dataframe[columns[col]]) & ((dataframe.shift()[columns[col2]] > dataframe.shift()[columns[col]]))) * 1 - ((dataframe[columns[col2]] > dataframe[columns[col]]) & ((dataframe.shift()[columns[col2]] < dataframe.shift()[columns[col]]))) * 1
     return cross_df
+
+# returns a dataframe that converts all the close and moving averages to daily percent change values
+def return_pct_change(dataframe):
+    pct_change_df = dataframe.pct_change()
+    return pct_change_df
+    
