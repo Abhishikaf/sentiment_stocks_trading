@@ -2,4 +2,21 @@
 
 ### imports / requirements
 
+**general**
+pandas
+alpaca
+python 3.7+ 
+numpy 
+matplotlib
+import datetime
 
+**for sentiment analysis**
+import regex as re
+from wordcloud import WordCloud, STOPWORDS
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+flair
+import nltk
+python-levenshtein 
+
+**stock research**
+from AlpacaFunctions import get_historical_dataframe** 
