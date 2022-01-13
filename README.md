@@ -1,21 +1,22 @@
 # sentiment_stocks_trading
 
-## imports / requirements
+### imports / requirements
 
-### general
-**pandas
+**general**
+pandas
 alpaca
-python 3.8 
+python 3.7+ 
 numpy 
 matplotlib
-import datetime**
+import datetime
 
-### for sentiment analysis
-**import regex as re
+**for sentiment analysis**
+import regex as re
 from wordcloud import WordCloud, STOPWORDS
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import snscrape.modules.twitter as sntwitter
-import nltk**
+flair
+import nltk
+python-levenshtein 
 
-### stock research
+**stock research**
 from AlpacaFunctions import get_historical_dataframe** 
