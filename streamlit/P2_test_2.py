@@ -15,7 +15,8 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-#from analyzer.plot_industry_analysis import plot_industry_analysis
+from IPython.display import Image
+
 
 st.set_page_config(
     layout="wide",
@@ -45,10 +46,12 @@ if page == 'Algorithm Parameters':
 
     terms = st.sidebar.selectbox("Choose Search Terms :", ['climate','green','environmental'])
     st.write("You selected:", terms);
+    st.image('MC_fiveyear_sim_plot.png', use_column_width='auto')
 
 
 if page == 'Test Model Performance':
     st.header("Test Model Performance")
+    st.image('Screen_Shot_2.png', use_column_width='auto')
 
 if page == 'Model Stats/Summary':
     st.header("Model Stats/Summary")
