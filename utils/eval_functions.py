@@ -1,13 +1,15 @@
 import pandas as pd
 import numpy as np
 
-def results_trade_amount_nostop(close_df_test, trained_predictions, trade_amount):
-    start_money = 10000
+
+# test to add up all exercises, no stops or changes to purchase/sell amount in place.
+def results_trade_amount_nostop(start_money, close_df_test, trained_predictions, trade_amount):
     shares = 0
+    money_on_hand = start_money
     shares_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
     money_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
     value_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
-    money_on_hand = start_money
+ 
     
     for day in range(len(trained_predictions)):
         shares_df.iloc[day][0] = shares
@@ -22,7 +24,29 @@ def results_trade_amount_nostop(close_df_test, trained_predictions, trade_amount
             
     return money_on_hand_df, shares_df, value_on_hand_df
 
+# alternate test to add up all exercises, stops in place to prevent negative money or shares.
+def results_trade_amount_stops(start_money, close_df_test, trained_predictions, trade_amount):
+    shares = 0
+    money_on_hand = start_money
+    shares_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    money_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    value_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    
+    for day in range(len(trained_predictions)):
+        shares_df.iloc[day][0] = shares
+        money_on_hand_df.iloc[day][0] = money_on_hand
+        value_on_hand_df.iloc[day][0] = (shares * close_df_test.iloc[day]["close"]) + money_on_hand
+        if (trained_predictions.iloc[day][0] == 0) & (shares - trade_amount / close_df_test.iloc[day]["close"] >= 0):
+            shares -= trade_amount / close_df_test.iloc[day]["close"]
+            money_on_hand += trade_amount
+        elif (trained_predictions.iloc[day][0] == 1) & (money_on_hand - trade_amount >= 0):
+            shares += trade_amount / close_df_test.iloc[day]["close"]
+            money_on_hand -= trade_amount
+            
+    return money_on_hand_df, shares_df, value_on_hand_df
 
+
+# test all SMA crossover signals with buy all/sell all as execution of signal
 def sma_crossover_eval(start_money, cross_df, close_df):
     start_money_reset = start_money
     shares_reset = 0
