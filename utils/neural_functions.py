@@ -30,3 +30,31 @@ def shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test):
     trained_predictions = pd.DataFrame((model.predict(X_test_scaled)).round(), index=y_test.index)
     
     return trained_predictions
+
+
+def deep_neural(X_train_scaled, y_train, X_test_scaled, y_test):
+    number_output_neurons = 1
+    number_input_features=X_train_scaled.shape[1]
+    hidden_nodes_layer1= (number_input_features + number_output_neurons)//2
+    hidden_nodes_layer2= (hidden_nodes_layer1 + number_output_neurons)//2
+    
+    # shallow model
+
+    model=Sequential()
+    model.add(Dense(units=hidden_nodes_layer1, input_dim=number_input_features, activation = "relu"))
+    model.add(Dense(units=hidden_nodes_layer2, activation = "relu"))
+    model.add(Dense(units=hidden_nodes_layer2//4, activation = "relu"))
+    model.add(Dense(units=hidden_nodes_layer2//8, activation = "relu"))
+    model.add(Dense(units=hidden_nodes_layer2//16, activation = "relu"))
+    model.add(Dense(units=1, activation = "sigmoid"))
+    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+    
+    X_train_scaled_array=np.asarray(X_train_scaled).astype(np.int)
+
+    y_train_array=np.asarray(y_train).astype(np.int)
+    
+    fit_model = model.fit(X_train_scaled_array, y_train_array, validation_split=.3, epochs=18)
+    
+    trained_predictions = pd.DataFrame((model.predict(X_test_scaled)).round(), index=y_test.index)
+    
+    return trained_predictions
