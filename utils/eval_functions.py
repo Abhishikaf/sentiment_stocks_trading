@@ -46,6 +46,31 @@ def results_trade_amount_stops(start_money, close_df_test, trained_predictions, 
     return money_on_hand_df, shares_df, value_on_hand_df
 
 
+
+# alternate strategy. buy all on buy signal, sell all on sell signal, if available.
+def buy_or_sell_all_if_available(start_money, close_df_test, trained_predictions):
+    shares = 0
+    money_on_hand = start_money
+    shares_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    money_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    value_on_hand_df = pd.DataFrame(np.zeros(shape=trained_predictions.shape[0]), index=trained_predictions.index)
+    
+    for day in range(len(trained_predictions)):
+        shares_df.iloc[day][0] = shares
+        money_on_hand_df.iloc[day][0] = money_on_hand
+        value_on_hand_df.iloc[day][0] = (shares * close_df_test.iloc[day]["close"]) + money_on_hand
+        if (trained_predictions.iloc[day][0] == 0) & (shares > 0):
+            money_on_hand = shares * close_df_test.iloc[day]["close"]
+            shares = 0
+        elif (trained_predictions.iloc[day][0] == 1) & (money_on_hand > 0):
+            shares = money_on_hand / close_df_test.iloc[day]["close"]
+            money_on_hand = 0
+    
+    return money_on_hand_df, shares_df, value_on_hand_df
+
+
+
+
 # test all SMA crossover signals with buy all/sell all as execution of signal
 def sma_crossover_eval(start_money, cross_df, close_df):
     start_money_reset = start_money
