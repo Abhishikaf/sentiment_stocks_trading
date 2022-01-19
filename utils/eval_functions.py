@@ -26,7 +26,8 @@ def results_trade_amount_nostop(close_df_test, trained_predictions, trade_amount
 def sma_crossover_eval(start_money, cross_df, close_df):
     start_money_reset = start_money
     shares_reset = 0
-
+    cross_cols = cross_df.columns
+    
     shares_df = pd.DataFrame(np.zeros(shape=cross_df.shape), index=cross_df.index, columns = cross_cols)
     money_on_hand_df = pd.DataFrame(np.zeros(shape=cross_df.shape), index=cross_df.index, columns = cross_cols)
     value_on_hand_df = pd.DataFrame(np.zeros(shape=cross_df.shape), index=cross_df.index, columns = cross_cols)
@@ -46,3 +47,4 @@ def sma_crossover_eval(start_money, cross_df, close_df):
             elif (cross_df[col].iloc[day] == 1) & (money_on_hand > 0):
                 shares = money_on_hand / close_df.iloc[day]["close"]
                 money_on_hand = 0
+    return value_on_hand_df
