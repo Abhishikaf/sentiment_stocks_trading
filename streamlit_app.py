@@ -86,8 +86,7 @@ def show_wordcloud(data):
 st.set_page_config(
     layout="wide",
 )
-#st.title("ALGORITHMIC, MACHINE LEARNING, AND NEURAL TRADING TOOLS WITH ESG SENTIMENT FOCUS")
-path = Path('images/Title.jpg')
+# st.title("ALGORITHMIC, MACHINE LEARNING, AND NEURAL TRADING TOOLS WITH ESG SENTIMENT FOCUS")
 # Had to use literal path here. Objected to Path('images/Title.jpg')
 st.image('images/Title.jpg', use_column_width='auto')
 
@@ -105,12 +104,29 @@ if page == 'Ticker Selection':
     keywords = get_ticker_keywords(ticker)
     show_wordcloud(keywords)
 
+    today = pd.Timestamp.now(tz="America/New_York")
+    start_date = pd.Timestamp(today - pd.Timedelta(days=500)).isoformat()
+    end_date = today
+    timeframe = '1D'
+
+    ticker = st.session_state.ticker
+    df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
+    df['SMA50'] = df['close'].rolling(window=50).mean()
+    df['SMA100'] = df['close'].rolling(window=100).mean()
+    df_close_sma = df[['close', 'SMA50', 'SMA100']]
+    fig = px.line(df_close_sma)
+    st.plotly_chart(fig)
+
 
 if page == 'Algorithm Parameters':
     #st.header("Algorithm Parameters")
     #st.header("Recent ESG Related Search Trends and Sentiment History:")
     st.header(f"{st.session_state.ticker}:  Shallow vs. Deep Neural Network")
 
+    # Enable storing dictionary of plots where entries might be:
+    #   { model : [plot1, plot2, ...] )
+    if 'fig_dict' not in st.session_state:
+        st.session_state.fig_dict = {}
 
     # Could use on_change(function) arg... otherwise when to call function with these parameters?
     n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
@@ -155,6 +171,8 @@ if page == 'Algorithm Parameters':
         predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
         predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
 
+        # Columns can be named e.g. left_header = left_col.text_input("Shallow Neural")
+        # then figure title could be e.g. "Actual vs. Test"
         left_col, right_col = st.columns(2)
         with left_col:
             sub_fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -176,19 +194,19 @@ if page == 'Algorithm Parameters':
 #    Which to run, what to plot?
 
 		#get shorter close_df_test dataframe with only the test indexes
-		close_df_test = pd.DataFrame(close_df["close"]).loc[X_test.index]
-		
-		# function to call basic trade test no stops
-		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, trained_predictions, trade_amount)
-		
-		# function to call basic trade test with stops
-		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_stops(start_money, close_df_test, trained_predictions, trade_amount)
-		
-		# alternate strategy. buy all on buy signal, sell all on sell signal, if available.
-		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_all_if_available(start_money, close_df_test, trained_predictions)
-		
-		# alternate strategy. spend trade_percent of available money on buy signal, sell trade_percent of available shares on sell signal.
-		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_trade_percent(trade_percent, start_money, close_df_test, trained_predictions)
+#		close_df_test = pd.DataFrame(close_df["close"]).loc[X_test.index]
+#		
+#		# function to call basic trade test no stops
+#		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, trained_predictions, trade_amount)
+#		
+#		# function to call basic trade test with stops
+#		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_stops(start_money, close_df_test, trained_predictions, trade_amount)
+#		
+#		# alternate strategy. buy all on buy signal, sell all on sell signal, if available.
+#		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_all_if_available(start_money, close_df_test, trained_predictions)
+#		
+#		# alternate strategy. spend trade_percent of available money on buy signal, sell trade_percent of available shares on sell signal.
+#		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_trade_percent(trade_percent, start_money, close_df_test, trained_predictions)
 
 #    terms = st.sidebar.selectbox("Choose Search Terms :", ['climate','green','environmental'])
 #    st.write("You selected:", terms);
