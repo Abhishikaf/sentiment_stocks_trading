@@ -152,11 +152,12 @@ if page == 'Algorithm Parameters':
         st.session_state.fig_dict = {}
 
     if 'instance' not in st.session_state:
+        st.session_state.instance = 1
         instance = 1
         st.write("Initializing instance: ", instance)
     else:
         instance = st.session_state.instance 
-        st.session_state = instance + 1
+        st.session_state.instanced = instance + 1
         st.write("Updated instance: ", instance)
 
     #n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
