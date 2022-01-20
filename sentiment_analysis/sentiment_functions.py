@@ -18,6 +18,7 @@ import regex as re
 from pandas.tseries.offsets import BDay
 import requests
 import json
+from segtok.segmenter import split_single
 
 
 
@@ -288,5 +289,21 @@ def get_flair_score(df):
     flair_list = []
     for i in range(df_row):
         flair_list.append((df.iloc[i, 1:df_col]).apply(lambda s: score_flair(s)[0]).mean())
+        
+    return flair_list
+
+
+def get_news_flair_score(df):
+    
+    df_row = df.shape[0]
+    df_col = df.shape[1]
+    
+    flair_list = []
+    
+    for i in range(df_row):
+        sentences = []
+        sentences = (df.iloc[i, 1:df_col]).apply(make_sentences)
+        
+        flair_list.append(sentences.apply(lambda s: score_flair(s)[0]).mean())
         
     return flair_list
