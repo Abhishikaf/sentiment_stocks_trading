@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 # returns a dataframe with rolling average columns. moving average numbers were chosen from reported amounts of the most common ones used by other traders. 5, 10, 20, 50, 100, and 200, plus fibonacci numbers in the same range.
 def return_rolling_averages(dataframe):
@@ -31,3 +32,11 @@ def return_pct_change(dataframe):
     pct_change_df = dataframe.pct_change()
     return pct_change_df
     
+
+def get_ticker_keywords(ticker):
+    # should check if CSV exists, but for now counting on pre-processed tickers only
+
+    df = pd.read_csv(Path('sentiment_analysis/Resources/news_data/' + ticker + '.csv'), usecols= ['Key_words'])
+    keywords = df['Key_words'].unique()
+    return keywords
+

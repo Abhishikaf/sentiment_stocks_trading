@@ -1,0 +1,241 @@
+
+import os
+import requests
+import json
+import pandas as pd
+from dotenv import load_dotenv
+import holoviews as hv
+from pathlib import Path
+
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+from bokeh.palettes import Oranges256 as oranges
+from bokeh.sampledata.us_states import data as us_states
+from bokeh.plotting import figure
+from bokeh.io import output_notebook, show
+
+import streamlit as st
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from IPython.display import Image
+
+from wordcloud import WordCloud, STOPWORDS
+import matplotlib.pyplot as plt
+from io import BytesIO
+
+# import functions
+from utils.AlpacaFunctions import get_historical_dataframe
+from utils.data_process import return_rolling_averages
+from utils.data_process import return_crossovers
+from utils.data_process import return_weighted_crossovers
+from utils.data_process import get_ticker_keywords
+
+from utils.neural_functions import shallow_neural
+from utils.neural_functions import deep_neural
+from utils.eval_functions import sma_crossover_eval
+from utils.eval_functions import results_trade_amount_nostop
+from utils.eval_functions import results_trade_amount_stops
+from utils.eval_functions import buy_or_sell_all_if_available
+from utils.eval_functions import buy_or_sell_trade_percent
+
+click_count=0
+
+def button_test(layers, epochs, tt_ratio):
+    global click_count
+
+    click_count += 1
+    #st.write("Execute button clicked", click_count)
+    st.write(f"[NOT USED] Neural layers: {layers}   Epochs: {epochs}   Train/test ratio: {tt_ratio}")
+
+def process_ticker():
+    global ticker
+
+    st.write("process_ticker:", ticker)
+
+stopwords = set(STOPWORDS)
+
+def show_wordcloud(data):
+    wordcloud = WordCloud(
+        background_color='white',
+        stopwords=stopwords,
+        max_words=100,
+        max_font_size=30,
+        scale=3,
+        random_state=1)
+
+    wordcloud=wordcloud.generate(str(data))
+
+    fig = plt.figure(1, figsize=(5, 5))
+    plt.axis('off')
+
+    col1, col2, col3 = st.columns([1,6,1])
+    with col2:
+        plt.imshow(wordcloud)
+        st.pyplot(fig)
+
+
+##########
+## MAIN ##
+##########
+
+st.set_page_config(
+    layout="wide",
+)
+#st.title("ALGORITHMIC, MACHINE LEARNING, AND NEURAL TRADING TOOLS WITH ESG SENTIMENT FOCUS")
+path = Path('images/Title.jpg')
+# Had to use literal path here. Objected to Path('images/Title.jpg')
+st.image('images/Title.jpg', use_column_width='auto')
+
+st.sidebar.title("Model Configuration")
+page = st.sidebar.radio('Select a view', options=['Ticker Selection','Algorithm Parameters', 'Test Model Performance', 'Model Stats/Summary'], key='1')
+#st.write("Page selected:", page)
+
+if page == 'Ticker Selection':
+    if 'ticker' not in st.session_state:
+        st.session_state.ticker = ""
+
+    ticker = st.selectbox('Select a stock ticker',['GOOG','INTC','MSFT','CRM','BAC','PYPL','AAPL','NVDA'])
+    if ticker:
+        st.session_state.ticker = ticker
+    keywords = get_ticker_keywords(ticker)
+    show_wordcloud(keywords)
+
+
+if page == 'Algorithm Parameters':
+    #st.header("Algorithm Parameters")
+    #st.header("Recent ESG Related Search Trends and Sentiment History:")
+    st.header(f"{st.session_state.ticker}:  Shallow vs. Deep Neural Network")
+
+
+    # Could use on_change(function) arg... otherwise when to call function with these parameters?
+    n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
+    #n_layers = st.sidebar.slider("Neural layers", 3, 10, 5, key="layers")
+    #st.write(n_layers)
+    n_epochs = st.sidebar.slider("Epochs", 100, 800, 300, 100, key="epochs")
+    tt_ratio = st.sidebar.select_slider("Train/test Ratio", options=["2/1","3/1","4/1","5/1"], value=("3/1"),key="train_test")
+    if st.sidebar.button("Execute"):
+        button_test(n_layers, n_epochs, tt_ratio)
+
+        # Call model functions
+        today = pd.Timestamp.now(tz="America/New_York")
+        start_date = pd.Timestamp(today - pd.Timedelta(days=500)).isoformat()
+        end_date = today
+        timeframe = '1D'
+
+        ticker = st.session_state.ticker
+        df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
+        volume_df = pd.DataFrame(df["volume"])
+        close_df = pd.DataFrame(df["close"])
+        return_rolling_averages(close_df)
+        cross_df = return_crossovers(close_df)
+        cross_signals = cross_df.sum(axis=1)
+        pct_change_df = close_df.pct_change()
+        cross_weighted_df = return_weighted_crossovers(close_df, pct_change_df)
+        cross_signals_weighted = pd.DataFrame(cross_weighted_df.sum(axis=1))
+        signals_input_df = pd.concat([pct_change_df, cross_df, volume_df, pct_change_df, cross_signals, cross_signals_weighted, cross_weighted_df], axis=1)
+
+        X = signals_input_df.dropna()
+        y_signal = ((close_df["close"] > close_df["close"].shift()).shift(-1))*1
+        y = pd.DataFrame(y_signal).loc[X.index]
+
+        X_train=X[:-100]
+        X_test=X[-100:]
+        y_train=y[:-100]
+        y_test=y[-100:]
+
+        scaler = StandardScaler()
+        X_scaler = scaler.fit(X_train)
+        X_train_scaled = scaler.transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
+        predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
+
+        left_col, right_col = st.columns(2)
+        with left_col:
+            sub_fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_shallow = px.line(predictions_shallow, color_discrete_sequence=['yellow'])
+            fig_test = px.line(y_test, color_discrete_sequence=['green'])
+            sub_fig.add_traces(fig_shallow.data + fig_test.data)
+            sub_fig.update_layout(title_text='Shallow Neural')
+            st.plotly_chart(sub_fig)
+
+        with right_col:
+            sub_fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_deep = px.line(predictions_deep, color_discrete_sequence=['yellow'])
+            fig_test = px.line(y_test, color_discrete_sequence=['green'])
+            sub_fig.add_traces(fig_deep.data + fig_test.data)
+            sub_fig.update_layout(title_text='Deep Neural')
+            st.plotly_chart(sub_fig)
+
+# PLACE HOLDERS (they each return the same dataframes)
+#    Which to run, what to plot?
+
+		#get shorter close_df_test dataframe with only the test indexes
+		close_df_test = pd.DataFrame(close_df["close"]).loc[X_test.index]
+		
+		# function to call basic trade test no stops
+		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, trained_predictions, trade_amount)
+		
+		# function to call basic trade test with stops
+		money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_stops(start_money, close_df_test, trained_predictions, trade_amount)
+		
+		# alternate strategy. buy all on buy signal, sell all on sell signal, if available.
+		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_all_if_available(start_money, close_df_test, trained_predictions)
+		
+		# alternate strategy. spend trade_percent of available money on buy signal, sell trade_percent of available shares on sell signal.
+		money_on_hand_df, shares_df, value_on_hand_df = buy_or_sell_trade_percent(trade_percent, start_money, close_df_test, trained_predictions)
+
+#    terms = st.sidebar.selectbox("Choose Search Terms :", ['climate','green','environmental'])
+#    st.write("You selected:", terms);
+
+
+if page == 'Test Model Performance':
+    st.header("Test Model Performance")
+    st.image('Screen_Shot_2.png', width=1000)
+
+if page == 'Model Stats/Summary':
+    st.header("Model Stats/Summary")
+    left_col, middle_col, right_col = st.columns(3)
+
+    tick_size = 12
+    axis_title_size = 16
+
+    left_col.subheader("Left Upper Image")
+    # left_col.altair_chart(fig, use_container_width=True)
+    #left_col.st.image('MC_fiveyear_sim_plot.png', use_container_width=True)
+    with left_col:
+        st.image('MC_fiveyear_sim_plot.png', use_column_width='auto')
+
+    left_col.subheader("Left Lower Image")
+    with left_col:
+        st.image("MC_fiveyear_dist_plot.png", use_column_width='auto')
+
+    middle_col.subheader("Middle data")
+    middle_col.markdown("Lots of text")
+    middle_col.subheader("Middle lower data")
+    middle_col.markdown("More text")
+
+    right_col.subheader("Right data")
+    right_col.markdown("Lots of text")
+    right_col.subheader("Right lower data")
+    right_col.markdown("More text")
+
+# Streamlit widgets automatically run the script from top to bottom. Since
+# this button is not connected to any other logic, it just causes a plain
+# rerun.
+st.button("Re-run")
+
+
+#   Will all occurances of hvplot() need changing to plotly_chart()?
+#st.plotly_chart(fig6,use_container_width = True)
+
+#st.write("Saving fig6")
+#fig6.write_image("fig6.png", engine="kaleido")
+
+#st.write("Reading fig6")
+#st.image("fig6.png")
