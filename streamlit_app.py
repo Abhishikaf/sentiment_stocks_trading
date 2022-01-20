@@ -4,7 +4,7 @@ import requests
 import json
 import pandas as pd
 from dotenv import load_dotenv
-import holoviews as hv
+#import holoviews as hv
 from pathlib import Path
 
 import tensorflow as tf
@@ -70,10 +70,10 @@ def show_wordcloud(data):
 
     wordcloud=wordcloud.generate(str(data))
 
-    fig = plt.figure(1, figsize=(5, 5))
+    fig = plt.figure(1, figsize=(4, 4))
     plt.axis('off')
 
-    col1, col2, col3 = st.columns([1,6,1])
+    col1, col2, col3 = st.columns([1,5,1])
     with col2:
         plt.imshow(wordcloud)
         st.pyplot(fig)
@@ -90,9 +90,11 @@ st.set_page_config(
 # Had to use literal path here. Objected to Path('images/Title.jpg')
 st.image('images/Title.jpg', use_column_width='auto')
 
-st.sidebar.title("Model Configuration")
+st.sidebar.title("Select a page")
 page = st.sidebar.radio('Select a view', options=['Ticker Selection','Algorithm Parameters', 'Test Model Performance', 'Model Stats/Summary'], key='1')
-#st.write("Page selected:", page)
+st.sidebar.markdown("""---""")
+
+st.sidebar.header("Model Configuration")
 
 if page == 'Ticker Selection':
     if 'ticker' not in st.session_state:
@@ -109,18 +111,32 @@ if page == 'Ticker Selection':
     end_date = today
     timeframe = '1D'
 
+    # do we need two columns here? 
+    # Display SMAs on left, close/sentiment on right?
     ticker = st.session_state.ticker
     df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
+    df['SMA20'] = df['close'].rolling(window=20).mean()
     df['SMA50'] = df['close'].rolling(window=50).mean()
     df['SMA100'] = df['close'].rolling(window=100).mean()
-    df_close_sma = df[['close', 'SMA50', 'SMA100']]
-    fig = px.line(df_close_sma)
+    df_close_sma = df[['close', 'SMA20', 'SMA50', 'SMA100']]
+    fig = px.line(df_close_sma,  title=ticker +  " -- " + "Close with SMAs")
     st.plotly_chart(fig)
+
+#    df_close_sentiment = df[['close']]
+#    # Call concat sentiment function
+#    df_close_sentiment = concat_sentiment_data(ticker, df, True, True)
+#    fig = px.line(df_close_sentiment,  title=ticker + " -- " + "Close with Twitter and GoogleNews sentiment")
+#    st.plotly_chart(fig)
+
 
 
 if page == 'Algorithm Parameters':
     #st.header("Algorithm Parameters")
     #st.header("Recent ESG Related Search Trends and Sentiment History:")
+
+    if 'ticker' not in st.session_state:
+        st.session_state.ticker = "GOOG"
+
     st.header(f"{st.session_state.ticker}:  Shallow vs. Deep Neural Network")
 
     # Enable storing dictionary of plots where entries might be:
@@ -128,14 +144,30 @@ if page == 'Algorithm Parameters':
     if 'fig_dict' not in st.session_state:
         st.session_state.fig_dict = {}
 
-    # Could use on_change(function) arg... otherwise when to call function with these parameters?
-    n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
+    #n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
     #n_layers = st.sidebar.slider("Neural layers", 3, 10, 5, key="layers")
-    #st.write(n_layers)
-    n_epochs = st.sidebar.slider("Epochs", 100, 800, 300, 100, key="epochs")
-    tt_ratio = st.sidebar.select_slider("Train/test Ratio", options=["2/1","3/1","4/1","5/1"], value=("3/1"),key="train_test")
+    #terms st.sidebar.selectbox("Choose Search Terms :", ['climate','green','environmental'])
+    st.sidebar.subheader("Select Epochs")
+    n_epochs = st.sidebar.slider("Epochs", 20, 300, 20, 20, key="epochs")
+    st.sidebar.markdown("""---""")
+    
+    st.sidebar.subheader("Sentiment sources")
+    twitter = st.sidebar.checkbox("Twitter")
+    googleNews = st.sidebar.checkbox("GoogleNews")
+    if twitter:
+        sentiment_sources = "With Twitter sentiment data"
+    if googleNews:
+        sentiment_sources = "With Google News sentiment data"
+    if twitter and googleNews:
+        sentiment_sources = "With Twitter and Google News sentiment data"
+    st.sidebar.markdown("""---""")
+    if twitter or googleNews:
+        st.subheader(sentiment_sources)
+
+    # tt_ratio = st.sidebar.select_slider("Train/test Ratio", options=["2/1","3/1","4/1","5/1"], value=("3/1"),key="train_test")
+
     if st.sidebar.button("Execute"):
-        button_test(n_layers, n_epochs, tt_ratio)
+        #button_test(n_layers, n_epochs, tt_ratio)
 
         # Call model functions
         today = pd.Timestamp.now(tz="America/New_York")
