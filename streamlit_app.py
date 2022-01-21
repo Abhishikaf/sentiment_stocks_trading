@@ -204,6 +204,12 @@ if page == 'Algorithm Parameters':
         cross_signals_weighted = pd.DataFrame(cross_weighted_df.sum(axis=1))
         signals_input_df = pd.concat([pct_change_df, cross_df, volume_df, pct_change_df, cross_signals, cross_signals_weighted, cross_weighted_df], axis=1)
 
+        if twitter:
+            signals_input_df = concat_sentiment(ticker, signals_input_df, True, False)
+
+        if googleNews:
+            signals_input_df = concat_sentiment(ticker, signals_input_df, False, True)
+
         X = signals_input_df.dropna()
         y_signal = ((close_df["close"] > close_df["close"].shift()).shift(-1))*1
         y = pd.DataFrame(y_signal).loc[X.index]
@@ -223,12 +229,20 @@ if page == 'Algorithm Parameters':
         # Columns can be named e.g. left_header = left_col.text_input("Shallow Neural")
         # then figure title could be e.g. "Actual vs. Test"
         left_col, right_col = st.columns(2)
+        text = ""
         with left_col:
             left_fig = make_subplots(specs=[[{"secondary_y": True}]])
             fig_shallow = px.line(predictions_shallow, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
             left_fig.add_traces(fig_shallow.data + fig_test.data)
-            left_fig.update_layout(title_text=ticker + f" Shallow Neural: epochs: {n_epochs}")
+            if twitter:
+                text = "with Twitter sentiment" 
+            if googleNews:
+                text = "with GoogleNews sentiment" 
+            if twitter and googleNews:
+                text = "with Twitter and GoogleNews sentiment" 
+
+            left_fig.update_layout(title_text=ticker + f" Shallow Neural: epochs: {n_epochs}" + text)
             st.plotly_chart(left_fig)
 
         with right_col:
@@ -236,7 +250,7 @@ if page == 'Algorithm Parameters':
             fig_deep = px.line(predictions_deep, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
             right_fig.add_traces(fig_deep.data + fig_test.data)
-            right_fig.update_layout(title_text=ticker + f" Deep Neural: epochs: {n_epochs}")
+            right_fig.update_layout(title_text=ticker + f" Deep Neural: epochs: {n_epochs}" + text)
             st.plotly_chart(right_fig)
 
         st.session_state.fig_dict[instance] = [left_fig, right_fig]
