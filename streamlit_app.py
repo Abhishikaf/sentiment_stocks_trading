@@ -204,8 +204,10 @@ if page == 'Algorithm Parameters':
         cross_signals_weighted = pd.DataFrame(cross_weighted_df.sum(axis=1))
         signals_input_df = pd.concat([pct_change_df, cross_df, volume_df, pct_change_df, cross_signals, cross_signals_weighted, cross_weighted_df], axis=1)
 
+        st.write(signals_input_df.head())
         if twitter:
             signals_input_df = concat_sentiment(ticker, signals_input_df, True, False)
+            st.write(signals_input_df.head())
 
         if googleNews:
             signals_input_df = concat_sentiment(ticker, signals_input_df, False, True)
