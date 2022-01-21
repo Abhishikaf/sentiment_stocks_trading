@@ -42,6 +42,7 @@ from utils.eval_functions import results_trade_amount_nostop
 from utils.eval_functions import results_trade_amount_stops
 from utils.eval_functions import buy_or_sell_all_if_available
 from utils.eval_functions import buy_or_sell_trade_percent
+from utils.sentiment_functions import concat_sentiment
 
 click_count=0
 
@@ -91,7 +92,7 @@ st.set_page_config(
 st.image('images/Title.jpg', use_column_width='auto')
 
 st.sidebar.title("Select a page")
-page = st.sidebar.radio('Select a view', options=['Ticker Selection','Algorithm Parameters', 'Test Model Performance', 'Model Stats/Summary'], key='1')
+page = st.sidebar.radio('Select a view', options=['Ticker Selection','Algorithm Parameters', 'Model Stats/Summary'], key='1')
 st.sidebar.markdown("""---""")
 
 st.sidebar.header("Model Configuration")
@@ -100,7 +101,7 @@ if page == 'Ticker Selection':
     if 'ticker' not in st.session_state:
         st.session_state.ticker = ""
 
-    ticker = st.selectbox('Select a stock ticker',['GOOG','INTC','MSFT','CRM','BAC','PYPL','AAPL','NVDA'])
+    ticker = st.selectbox('Select a stock ticker',['GOOG','INTC','MSFT','CRM','BAC','PYPL','AAPL','NVDA','TSLA','VZ'])
     if ticker:
         st.session_state.ticker = ticker
     keywords = get_ticker_keywords(ticker)
@@ -113,20 +114,26 @@ if page == 'Ticker Selection':
 
     # do we need two columns here? 
     # Display SMAs on left, close/sentiment on right?
+    left_col, right_col = st.columns(2)
     ticker = st.session_state.ticker
     df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
     df['SMA20'] = df['close'].rolling(window=20).mean()
     df['SMA50'] = df['close'].rolling(window=50).mean()
     df['SMA100'] = df['close'].rolling(window=100).mean()
     df_close_sma = df[['close', 'SMA20', 'SMA50', 'SMA100']]
-    fig = px.line(df_close_sma,  title=ticker +  " -- " + "Close with SMAs")
-    st.plotly_chart(fig)
+    with left_col:
+        fig = px.line(df_close_sma,  title=ticker +  " -- " + "Close with SMAs")
+        st.plotly_chart(fig)
 
-#    df_close_sentiment = df[['close']]
-#    # Call concat sentiment function
-#    df_close_sentiment = concat_sentiment_data(ticker, df, True, True)
-#    fig = px.line(df_close_sentiment,  title=ticker + " -- " + "Close with Twitter and GoogleNews sentiment")
-#    st.plotly_chart(fig)
+    df_close_sentiment = df[['close']]
+    # Call concat sentiment function
+    df_close_sentiment = concat_sentiment(ticker, df_close_sentiment, True, False)
+    sentiment_scaler = StandardScaler()
+    sentiment_scaler.fit(df_close_sentiment)
+    df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment)
+    with right_col:
+        fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with Twitter and GoogleNews sentiment")
+        st.plotly_chart(fig)
 
 
 
@@ -143,6 +150,15 @@ if page == 'Algorithm Parameters':
     #   { model : [plot1, plot2, ...] )
     if 'fig_dict' not in st.session_state:
         st.session_state.fig_dict = {}
+
+    if 'instance' not in st.session_state:
+        st.session_state.instance = 1
+        instance = 1
+        st.write("Initializing instance: ", instance)
+    else:
+        instance = st.session_state.instance 
+        st.session_state.instance = instance + 1
+        st.write("Updated instance: ", instance)
 
     #n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
     #n_layers = st.sidebar.slider("Neural layers", 3, 10, 5, key="layers")
@@ -167,6 +183,7 @@ if page == 'Algorithm Parameters':
     # tt_ratio = st.sidebar.select_slider("Train/test Ratio", options=["2/1","3/1","4/1","5/1"], value=("3/1"),key="train_test")
 
     if st.sidebar.button("Execute"):
+        st.write("Instance: ", instance)
         #button_test(n_layers, n_epochs, tt_ratio)
 
         # Call model functions
@@ -200,27 +217,29 @@ if page == 'Algorithm Parameters':
         X_scaler = scaler.fit(X_train)
         X_train_scaled = scaler.transform(X_train)
         X_test_scaled = scaler.transform(X_test)
-        predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
-        predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
+        predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, n_epochs, debug=0)
+        predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, n_epochs, debug=0)
 
         # Columns can be named e.g. left_header = left_col.text_input("Shallow Neural")
         # then figure title could be e.g. "Actual vs. Test"
         left_col, right_col = st.columns(2)
         with left_col:
-            sub_fig = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_shallow = px.line(predictions_shallow, color_discrete_sequence=['yellow'])
+            left_fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_shallow = px.line(predictions_shallow, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
-            sub_fig.add_traces(fig_shallow.data + fig_test.data)
-            sub_fig.update_layout(title_text='Shallow Neural')
-            st.plotly_chart(sub_fig)
+            left_fig.add_traces(fig_shallow.data + fig_test.data)
+            left_fig.update_layout(title_text=ticker + f" Shallow Neural: epochs: {n_epochs}")
+            st.plotly_chart(left_fig)
 
         with right_col:
-            sub_fig = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_deep = px.line(predictions_deep, color_discrete_sequence=['yellow'])
+            right_fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_deep = px.line(predictions_deep, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
-            sub_fig.add_traces(fig_deep.data + fig_test.data)
-            sub_fig.update_layout(title_text='Deep Neural')
-            st.plotly_chart(sub_fig)
+            right_fig.add_traces(fig_deep.data + fig_test.data)
+            right_fig.update_layout(title_text=ticker + f" Deep Neural: epochs: {n_epochs}")
+            st.plotly_chart(right_fig)
+
+        st.session_state.fig_dict[instance] = [left_fig, right_fig]
 
 # PLACE HOLDERS (they each return the same dataframes)
 #    Which to run, what to plot?
@@ -255,37 +274,37 @@ if page == 'Model Stats/Summary':
     tick_size = 12
     axis_title_size = 16
 
+    if 'fig_dict' in st.session_state:
+        figures = st.session_state.fig_dict
+        for key in figures:
+            left_plot = figures[key][0]
+            right_plot = figures[key][1]
+            st.plotly_chart(left_plot)
+            st.plotly_chart(right_plot)
+
     left_col.subheader("Left Upper Image")
     # left_col.altair_chart(fig, use_container_width=True)
     #left_col.st.image('MC_fiveyear_sim_plot.png', use_container_width=True)
-    with left_col:
-        st.image('MC_fiveyear_sim_plot.png', use_column_width='auto')
-
-    left_col.subheader("Left Lower Image")
-    with left_col:
-        st.image("MC_fiveyear_dist_plot.png", use_column_width='auto')
-
-    middle_col.subheader("Middle data")
-    middle_col.markdown("Lots of text")
-    middle_col.subheader("Middle lower data")
-    middle_col.markdown("More text")
-
-    right_col.subheader("Right data")
-    right_col.markdown("Lots of text")
-    right_col.subheader("Right lower data")
-    right_col.markdown("More text")
+#    with left_col:
+#        st.image('MC_fiveyear_sim_plot.png', use_column_width='auto')
+#
+#    left_col.subheader("Left Lower Image")
+#    with left_col:
+#        st.image("MC_fiveyear_dist_plot.png", use_column_width='auto')
+#
+#    middle_col.subheader("Middle data")
+#    middle_col.markdown("Lots of text")
+#    middle_col.subheader("Middle lower data")
+#    middle_col.markdown("More text")
+#
+#    right_col.subheader("Right data")
+#    right_col.markdown("Lots of text")
+#    right_col.subheader("Right lower data")
+#    right_col.markdown("More text")
 
 # Streamlit widgets automatically run the script from top to bottom. Since
 # this button is not connected to any other logic, it just causes a plain
 # rerun.
-st.button("Re-run")
+#st.button("Re-run")
 
 
-#   Will all occurances of hvplot() need changing to plotly_chart()?
-#st.plotly_chart(fig6,use_container_width = True)
-
-#st.write("Saving fig6")
-#fig6.write_image("fig6.png", engine="kaleido")
-
-#st.write("Reading fig6")
-#st.image("fig6.png")
