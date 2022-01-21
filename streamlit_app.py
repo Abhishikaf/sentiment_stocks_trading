@@ -157,7 +157,7 @@ if page == 'Algorithm Parameters':
         st.write("Initializing instance: ", instance)
     else:
         instance = st.session_state.instance 
-        st.session_state.instanced = instance + 1
+        st.session_state.instance = instance + 1
         st.write("Updated instance: ", instance)
 
     #n_layers = st.sidebar.number_input( "Number of Neural Layers", 3, 10, 5, step=1)
@@ -228,7 +228,7 @@ if page == 'Algorithm Parameters':
             fig_shallow = px.line(predictions_shallow, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
             left_fig.add_traces(fig_shallow.data + fig_test.data)
-            left_fig.update_layout(title_text=ticker + ' Shallow Neural')
+            left_fig.update_layout(title_text=ticker + f" Shallow Neural: epochs: {n_epochs}")
             st.plotly_chart(left_fig)
 
         with right_col:
@@ -236,7 +236,7 @@ if page == 'Algorithm Parameters':
             fig_deep = px.line(predictions_deep, color_discrete_sequence=['orange'])
             fig_test = px.line(y_test, color_discrete_sequence=['green'])
             right_fig.add_traces(fig_deep.data + fig_test.data)
-            right_fig.update_layout(title_text=ticker + ' Deep Neural')
+            right_fig.update_layout(title_text=ticker + f" Deep Neural: epochs: {n_epochs}")
             st.plotly_chart(right_fig)
 
         st.session_state.fig_dict[instance] = [left_fig, right_fig]
