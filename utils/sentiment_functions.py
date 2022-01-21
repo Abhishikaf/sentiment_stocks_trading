@@ -17,3 +17,4 @@ def concat_sentiment(ticker, df, twitter = True, gnews = True):
         signals_with_sentiment_df = signals_with_sentiment_df.drop(columns = ['subj_score', 'simi_score', 'vader_score','scores_flair'])
     
     return signals_with_sentiment_df
+
