@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 def concat_trends(ticker, df):
-    Path = '../sentiment_analysis/Resources/google_trends/{}.csv'.format(ticker)
+    Path = './sentiment_analysis/Resources/google_trends/{}.csv'.format(ticker)
     trends_data_df = pd.read_csv(Path, index_col = 'Date', parse_dates = True, infer_datetime_format = True)
     trends_data_df.index = trends_data_df.index.tz_localize(tz="America/New_York")
     
