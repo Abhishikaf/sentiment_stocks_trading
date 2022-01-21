@@ -217,8 +217,8 @@ if page == 'Algorithm Parameters':
         X_scaler = scaler.fit(X_train)
         X_train_scaled = scaler.transform(X_train)
         X_test_scaled = scaler.transform(X_test)
-        predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
-        predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, debug=0)
+        predictions_shallow = shallow_neural(X_train_scaled, y_train, X_test_scaled, y_test, n_epochs, debug=0)
+        predictions_deep = deep_neural(X_train_scaled, y_train, X_test_scaled, y_test, n_epochs, debug=0)
 
         # Columns can be named e.g. left_header = left_col.text_input("Shallow Neural")
         # then figure title could be e.g. "Actual vs. Test"
