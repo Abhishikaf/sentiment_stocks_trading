@@ -43,6 +43,7 @@ from utils.eval_functions import results_trade_amount_stops
 from utils.eval_functions import buy_or_sell_all_if_available
 from utils.eval_functions import buy_or_sell_trade_percent
 from utils.sentiment_functions import concat_sentiment
+from utils.trends_functions import concat_trends
 
 click_count=0
 
@@ -132,10 +133,26 @@ if page == 'Ticker Selection':
     sentiment_scaler.fit(df_close_sentiment)
     df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment)
     with right_col:
-        fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with Twitter and GoogleNews sentiment")
+        fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with Twitter sentiment")
         st.plotly_chart(fig)
-
-
+#===
+    df_close_sentiment = df[['close']]
+    left_col1, middle_col1, right_col1 = st.columns([2,0.5,2])
+    df_close_sentiment_gnews = concat_sentiment(ticker, df_close_sentiment, False, True)
+    sentiment_scaler = StandardScaler()
+    sentiment_scaler.fit(df_close_sentiment_gnews)
+    df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment_gnews)
+    with left_col1:
+        fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleNews sentiment")
+        st.plotly_chart(fig)
+    df_close_sentiment_gtrend = concat_trends(ticker, df_close_sentiment)
+    sentiment_scaler = StandardScaler()
+    sentiment_scaler.fit(df_close_sentiment_gtrend)
+    df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment_gtrend)
+    with right_col1:
+        fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleTrends sentiment")
+        st.plotly_chart(fig)
+#===
 
 if page == 'Algorithm Parameters':
     #st.header("Algorithm Parameters")
