@@ -93,7 +93,7 @@ st.set_page_config(
 st.image('images/Title.jpg', use_column_width='auto')
 
 st.sidebar.title("Select a page")
-page = st.sidebar.radio('Select a view', options=['Ticker Selection','Algorithm Parameters', 'Model Stats/Summary'], key='1')
+page = st.sidebar.radio('', options=['Ticker Selection','Algorithm Parameters', 'Model Stats/Summary'], key='1')
 st.sidebar.markdown("""---""")
 
 st.sidebar.header("Model Configuration")
@@ -135,9 +135,9 @@ if page == 'Ticker Selection':
     with right_col:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with Twitter sentiment")
         st.plotly_chart(fig)
-#===
     df_close_sentiment = df[['close']]
     left_col1, middle_col1, right_col1 = st.columns([2,0.5,2])
+
     df_close_sentiment_gnews = concat_sentiment(ticker, df_close_sentiment, False, True)
     sentiment_scaler = StandardScaler()
     sentiment_scaler.fit(df_close_sentiment_gnews)
@@ -145,6 +145,7 @@ if page == 'Ticker Selection':
     with left_col1:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleNews sentiment")
         st.plotly_chart(fig)
+
     df_close_sentiment_gtrend = concat_trends(ticker, df_close_sentiment)
     sentiment_scaler = StandardScaler()
     sentiment_scaler.fit(df_close_sentiment_gtrend)
@@ -152,7 +153,6 @@ if page == 'Ticker Selection':
     with right_col1:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleTrends sentiment")
         st.plotly_chart(fig)
-#===
 
 if page == 'Algorithm Parameters':
     #st.header("Algorithm Parameters")
@@ -278,15 +278,19 @@ if page == 'Algorithm Parameters':
         start_money = 10000
         trade_amount = 600
         trade_percent = .2
+        normalized_close_df = start_money * close_df_test["close"]/close_df_test.iloc[0]["close"]
         with left_col:
             money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, predictions_shallow, trade_amount)
-            left_fig = px.line(value_on_hand_df)
+            left_fig = px.line(value_on_hand_df, color_discrete_sequence=['green'])
+            left_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df,  mode='lines')
             left_fig.update_layout(title_text=ticker + f": Shallow neural, no buy/sell stop")
             st.plotly_chart(left_fig)
 
         with right_col:
             money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, predictions_deep, trade_amount)
-            right_fig = px.line(value_on_hand_df)
+            right_fig = px.line(value_on_hand_df, color_discrete_sequence=['green'])
+            right_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df, mode='lines')
+
             right_fig.update_layout(title_text=ticker + f": Deep neural, no buy/sell stop")
             st.plotly_chart(right_fig)
 
@@ -320,12 +324,18 @@ if page == 'Test Model Performance':
     st.header("Test Model Performance")
     st.image('Screen_Shot_2.png', width=1000)
 
+clear_hist=False
+
 if page == 'Model Stats/Summary':
     st.header("Model Stats/Summary")
     left_col, right_col = st.columns(2)
 
     tick_size = 12
     axis_title_size = 16
+
+    clear_hist = st.sidebar.checkbox("Clear Summary History")
+    if clear_hist:
+        st.session_state.fig_dict = {}
 
     if 'fig_dict' in st.session_state:
         figures = st.session_state.fig_dict
@@ -335,13 +345,19 @@ if page == 'Model Stats/Summary':
             left_plot_b = figures[key][2]
             right_plot_b = figures[key][3]
             with left_col:
+                st.markdown("""---""")
                 st.plotly_chart(left_plot)
             with right_col:
+                st.markdown("""---""")
                 st.plotly_chart(right_plot)
             with left_col:
+                st.markdown("""---""")
                 st.plotly_chart(left_plot_b)
             with right_col:
+                st.markdown("""---""")
                 st.plotly_chart(right_plot_b)
+
+    st.markdown("""---""")
 
     # left_col.altair_chart(fig, use_container_width=True)
     #left_col.st.image('MC_fiveyear_sim_plot.png', use_container_width=True)
