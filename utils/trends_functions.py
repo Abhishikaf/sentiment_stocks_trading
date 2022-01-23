@@ -7,7 +7,7 @@ def concat_trends(ticker, df):
     trends_data_df.index = trends_data_df.index.tz_localize(tz="America/New_York")
     
 
-    #trends_data_df = df.assign(key=df.index.normalize()).merge(trends_data_df, left_on='key', right_index=True, how='left').drop('key', 1)
+    trends_data_df = df.assign(key=df.index.normalize()).merge(trends_data_df, left_on='key', right_index=True, how='left').drop('key', 1)
     
     trends_data_df.dropna()
     
