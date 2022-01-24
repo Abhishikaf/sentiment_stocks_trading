@@ -18,8 +18,9 @@ alpaca = tradeapi.REST(
     api_version='v2')
 
 # Alpaca functions
-def get_historical_dataframe (ticker, start_date, end_date, timeframe):
-    ticker_df = alpaca.get_barset(ticker, timeframe, end = end_date, start = start_date, limit = 1000).df
+def get_historical_dataframe (ticker, timeframe, start_date, end_date):
+    #ticker_df = alpaca.get_barset(ticker, timeframe, end = end_date, start = start_date, limit = 10000).df
+    ticker_df = alpaca.get_bars(ticker, timeframe, start_date, end_date).df
     ticker_df.reindex(columns = ticker_df.columns)
     return ticker_df
 
