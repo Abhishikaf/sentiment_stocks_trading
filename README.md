@@ -122,6 +122,7 @@ Example of SMA crossover signals
 ---
 ## Future Development:
 
+- Add more buy/sell strategies.
 - Allow user to select any stock ticker.
 - Add functionality to account for stock splits.
 - Add error messages if stock data does not go back to the begin date or API call is refused.
