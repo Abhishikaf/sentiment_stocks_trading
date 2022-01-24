@@ -4,6 +4,14 @@ Highly rated ESG (Environmental, Social, and Governance) stocks are attractive t
 
 This application tests algorithms and trading strategies including a large amount of moving averages, simple moving averages crossover signals, and machine learning sentiment analysis using neural networks. The simple moving average crossover portion all of the  most commonly used moving average periods crossover signals as trading strategies. The neural portion uses over 200 input signals including percent change of moving averages and close prices, crossover signals, weighted crossover signals, the sum of crossover signals, the sum of weighted crossover signals, and a number of sentiment sources pulled from twitter, google news, and google trends using Natural Language Processing algorithms. A shallow and a deep neural network are both tested on each stock that is picked. Results of each test are stored and saved on a page to view and compare.
 
+The target buy/sell signal was calculated based on whether the price will go up or down the following day. Over 200 columns of inputs are used for the training set for the neural network to attempt to predict whether the stock price will rise or fall the following day.
+
+
+## Analysis:
+
+One will find by playing around with these or any algorithmic machine learning algorithm for trading a wide variety of results. These can include doing worse than the market, losing less than the market, gaining less than the market, doing the same as the market, or gaining more than the market. It will be found that sometimes a strategy appears to be doing better or worse than the market for a period and then the situation is reversed. The most interesting thing about these models is finding out what circumstances they beat the market, or at least provide a lower risk gain than the market.
+
+Experimenting with this application with various stocks has resulted in validation ratios ranging from 49 percent, which is more or less random, to sometimes as high as 80 percent validation ratios. However even 80 percent validation ratios for the test set do not always result in profits over the next few months when implementing the model, as the nature of the market is constantly changing. It is observed that some models when implemented on the test range may go far above or far below the actual stock performance, sometimes with high volatility and sometimes with much lower volatility.
 
 ---
 ## Technologies and Installation Guide:
@@ -47,9 +55,7 @@ You  will need an API key for RapidAPI.
 
 (https://rapidapi.com/socialminer/api/twitter32/)
 
-In order to gather additional sentiment signals, you will need to have jupyter notebook and be able to run code in the following files:
-
-
+In order to gather additional sentiment signals, there are several jupyter notebook files with functions available to do so.
 
 ---
 
@@ -93,14 +99,9 @@ LEGAL DISCLAIMER: This program is for eductional purposes. It is not financial a
 The program is intended to test algorithms and trading strategies that inlcude moving averages, simple moving average crossover signals, and machine learning sentiment analysis from various sources with neural networks.
 
 ---
-
-## Analysis:
-
-One will find by playing around with these or any algorithmic machine learning algorithm for trading a wide variety of results. These can include doing worse than the market, losing less than the market, gaining less than the market, doing the same as the market, or gaining more than the market. It will be found that sometimes a strategy appears to be doing better or worse than the market for a period and then the situation is reversed. The most interesting thing about these models is finding out what circumstances they beat the market, or at least provide a lower risk gain than the market.
-
----
 ## Future Development:
 
+- Allow user to select any stock ticker.
 - Add functionality to account for stock splits.
 - Add error messages if stock data does not go back to the begin date or API call is refused.
 - Add functionality to add dividends paid out while stock is held to money supply in evaluation functions.
@@ -122,8 +123,6 @@ One will find by playing around with these or any algorithmic machine learning a
 - Filter sentiment and trend data to timeframes starting at the close of the trading day and stopping at the close of the next trading day, instead of by day. Average or sum weekends and holidays with following trading day.
 - Train our own NLP neural model based on terms and phrases in financial and target sector reporting.
 
-
-
 ---
 
 ## Additional Acknowledgements:
@@ -143,7 +142,6 @@ David Jonathan (djonathan@cox.net)
 Dave Thomas (sjufan84@gmail.com)
 
 Preston Hodsman (phodsman@yahoo.com)
-
 
 ---
 
