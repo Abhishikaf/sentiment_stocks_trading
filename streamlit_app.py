@@ -94,7 +94,7 @@ st.set_page_config(
 st.image('images/Title.jpg', use_column_width='auto')
 
 st.sidebar.title("Select a page")
-page = st.sidebar.radio('', options=['Ticker Selection','Algorithm Parameters', 'Model Stats/Summary'], key='1')
+page = st.sidebar.radio('', options=['Ticker Selection','Algorithm Parameters', 'SMA Crossover Strategy Evaluation', 'Model Stats/Summary'], key='1')
 st.sidebar.markdown("""---""")
 
 st.sidebar.header("Model Configuration")
@@ -332,19 +332,43 @@ if page == 'Algorithm Parameters':
             right_fig.update_layout(title_text=ticker + f": Deep neural, no buy/sell stop")
             st.plotly_chart(right_fig)
 
-        #st.markdown("""---""")
-#        with left_col:
-#            value_on_hand_df = sma_crossover_eval(start_money, cross_df, close_df)
-#            normalized_full_close_df = start_money * close_df["close"]/close_df.iloc[0]["close"]
-#            st.write(normalized_full_close_df)
-#            full_crossovers = px.line(value_on_hand_df)
-#            full_crossovers.add_scatter(normalized_full_close_df, mode='lines')
-#            st.plotly_chart(full_crossovers)
-        st.markdown("""---""")
-
         figs.append(left_fig)
         figs.append(right_fig)
         st.session_state.fig_dict[instance] = figs
+
+
+if page == 'SMA Crossover Strategy Evaluation':
+    st.markdown("""---""")
+
+    if 'ticker' not in st.session_state:
+        st.session_state.ticker = "GOOG"
+
+    ticker = st.session_state.ticker 
+    st.header(f"{st.session_state.ticker}:  SMA Crossover Strategy Evaluation")
+
+    today = pd.Timestamp.now(tz="America/New_York")
+    start_date = pd.Timestamp(today - pd.Timedelta(days=500)).isoformat()
+    end_date = today
+    timeframe = '1D'
+
+    df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
+    close_df = pd.DataFrame(df["close"])
+    return_rolling_averages(close_df)
+    cross_df = return_crossovers(close_df)
+
+    start_money = 10000
+    with st.spinner(text = "Calculating Full Crossover plot..."):
+        sub_fig = make_subplots(specs = [[{"secondary_y": True}]])
+        value_on_hand_df = sma_crossover_eval(start_money, cross_df, close_df)
+        normalized_full_close_df = start_money * close_df["close"]/close_df.iloc[0]["close"]
+        full_crossovers = px.line(value_on_hand_df)
+        normalized_close = px.line(normalized_full_close_df)
+        normalized_close.update_traces(line=dict(color="Black", width=3.0))
+        sub_fig.add_traces(full_crossovers.data + normalized_close.data)
+        sub_fig.update_layout(width = 1500, height = 1000, title_text = "SMA Crossover evaluation figure ")
+        st.plotly_chart(sub_fig)
+
+    st.markdown("""---""")
 
 # PLACE HOLDERS (they each return the same dataframes)
 #    Which to run, what to plot?
