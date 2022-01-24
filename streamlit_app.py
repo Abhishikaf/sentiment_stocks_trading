@@ -13,10 +13,10 @@ from tensorflow.keras.models import Sequential
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from bokeh.palettes import Oranges256 as oranges
-from bokeh.sampledata.us_states import data as us_states
-from bokeh.plotting import figure
-from bokeh.io import output_notebook, show
+#from bokeh.palettes import Oranges256 as oranges
+#from bokeh.sampledata.us_states import data as us_states
+#from bokeh.plotting import figure
+#from bokeh.io import output_notebook, show
 
 import streamlit as st
 import plotly.express as px
@@ -26,7 +26,7 @@ from IPython.display import Image
 
 from wordcloud import WordCloud, STOPWORDS
 import matplotlib.pyplot as plt
-from io import BytesIO
+#from io import BytesIO
 
 # import functions
 from utils.AlpacaFunctions import get_historical_dataframe
@@ -44,6 +44,7 @@ from utils.eval_functions import buy_or_sell_all_if_available
 from utils.eval_functions import buy_or_sell_trade_percent
 from utils.sentiment_functions import concat_sentiment
 from utils.trends_functions import concat_trends
+from utils.esg import get_esg_df
 
 click_count=0
 
@@ -102,9 +103,11 @@ if page == 'Ticker Selection':
     if 'ticker' not in st.session_state:
         st.session_state.ticker = ""
 
-    ticker = st.selectbox('Select a stock ticker',['GOOG','INTC','MSFT','CRM','BAC','PYPL','AAPL','NVDA','TSLA','VZ'])
+    ticker = st.selectbox('Select a stock ticker',['GOOG','INTC','MSFT','CRM','BAC','PYPL','AAPL','NVDA','TSLA', 'VZ'])
+
     if ticker:
         st.session_state.ticker = ticker
+    st.table(get_esg_df(ticker))
     keywords = get_ticker_keywords(ticker)
     show_wordcloud(keywords)
 
@@ -124,34 +127,47 @@ if page == 'Ticker Selection':
     df_close_sma = df[['close', 'SMA20', 'SMA50', 'SMA100']]
     with left_col:
         fig = px.line(df_close_sma,  title=ticker +  " -- " + "Close with SMAs")
+        fig.update_layout(legend_title_text="Moving Averages")
         st.plotly_chart(fig)
 
     df_close_sentiment = df[['close']]
     # Call concat sentiment function
     df_close_sentiment = concat_sentiment(ticker, df_close_sentiment, True, False)
+    df_close_sentiment.dropna(inplace=True)
     sentiment_scaler = StandardScaler()
     sentiment_scaler.fit(df_close_sentiment)
     df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment)
     with right_col:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with Twitter sentiment")
+        labels={'0':'close', '1':'Subjectivity Score', '2':'Similarity Score', '3':'Vader Score','4':'Flair Scores'}
+        fig.for_each_trace(lambda t: t.update(name = labels[t.name], legendgroup = "Twitter", hovertemplate = t.hovertemplate.replace(t.name, labels[t.name])))
+        fig.update_layout(legend_title_text="Twitter")
         st.plotly_chart(fig)
     df_close_sentiment = df[['close']]
     left_col1, middle_col1, right_col1 = st.columns([2,0.5,2])
 
     df_close_sentiment_gnews = concat_sentiment(ticker, df_close_sentiment, False, True)
+    df_close_sentiment_gnews.dropna(inplace=True)
     sentiment_scaler = StandardScaler()
     sentiment_scaler.fit(df_close_sentiment_gnews)
     df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment_gnews)
     with left_col1:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleNews sentiment")
+        labels={'0':'close', '1':'Subjectivity Score', '2':'Similarity Score', '3':'Vader Score','4':'Flair Scores'}
+        fig.for_each_trace(lambda t: t.update(name = labels[t.name], legendgroup = "GoogleNews", hovertemplate = t.hovertemplate.replace(t.name, labels[t.name])))
+        fig.update_layout(legend_title_text="GoogleNews")
         st.plotly_chart(fig)
 
     df_close_sentiment_gtrend = concat_trends(ticker, df_close_sentiment)
+    df_close_sentiment_gtrend.dropna(inplace=True)
     sentiment_scaler = StandardScaler()
     sentiment_scaler.fit(df_close_sentiment_gtrend)
     df_close_sentiment_scaled = sentiment_scaler.transform(df_close_sentiment_gtrend)
     with right_col1:
         fig = px.line(df_close_sentiment_scaled,  title=ticker + " -- " + "Close with GoogleTrends sentiment")
+        labels={'0':'close', '1':'Trends'}
+        fig.for_each_trace(lambda t: t.update(name = labels[t.name], legendgroup = "Google Trends", hovertemplate = t.hovertemplate.replace(t.name, labels[t.name])))
+        fig.update_layout(legend_title_text="Google Trends")
         st.plotly_chart(fig)
 
 if page == 'Algorithm Parameters':
@@ -185,14 +201,17 @@ if page == 'Algorithm Parameters':
     st.sidebar.subheader("Sentiment sources")
     twitter = st.sidebar.checkbox("Twitter")
     googleNews = st.sidebar.checkbox("GoogleNews")
+    googleTrends = st.sidebar.checkbox("GoogleTrends")
     if twitter:
         sentiment_sources = "With Twitter sentiment data"
     if googleNews:
         sentiment_sources = "With Google News sentiment data"
     if twitter and googleNews:
         sentiment_sources = "With Twitter and Google News sentiment data"
+    if googleTrends:
+        sentiment_sources = "With Google Trends data"
     st.sidebar.markdown("""---""")
-    if twitter or googleNews:
+    if twitter or googleNews or googleTrends:
         st.subheader(sentiment_sources)
 
     # tt_ratio = st.sidebar.select_slider("Train/test Ratio", options=["2/1","3/1","4/1","5/1"], value=("3/1"),key="train_test")
@@ -207,35 +226,48 @@ if page == 'Algorithm Parameters':
         timeframe = '1D'
 
         ticker = st.session_state.ticker
+        #df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
         df = pd.DataFrame(get_historical_dataframe(ticker, start_date, end_date, timeframe)[ticker])
         volume_df = pd.DataFrame(df["volume"])
         close_df = pd.DataFrame(df["close"])
+        #st.write(close_df.head(10))
         return_rolling_averages(close_df)
         cross_df = return_crossovers(close_df)
         cross_signals = cross_df.sum(axis=1)
         pct_change_df = close_df.pct_change()
         cross_weighted_df = return_weighted_crossovers(close_df, pct_change_df)
         cross_signals_weighted = pd.DataFrame(cross_weighted_df.sum(axis=1))
+
         signals_input_df = pd.concat([pct_change_df, cross_df, volume_df, pct_change_df, cross_signals, cross_signals_weighted, cross_weighted_df], axis=1)
 
         X = signals_input_df.dropna()
 
         if twitter:
-            signals_input_df = concat_sentiment(ticker, X, True, False)
+            X = signals_input_df.dropna()
+            X = concat_sentiment(ticker, X, True, False)
 
         if googleNews:
-            signals_input_df = concat_sentiment(ticker, X, False, True)
+            X = signals_input_df.dropna()
+            X = concat_sentiment(ticker, X, False, True)
 
         if twitter and googleNews:
-            signals_input_df = concat_sentiment(ticker, X, True, True)
+            X = signals_input_df.dropna()
+            X = concat_sentiment(ticker, X, True, True)
 
+        if googleTrends:
+            X = concat_trends(ticker, X)
+
+
+        X = signals_input_df.dropna()
+
+        #y_signal = ((close_df["close"] > close_df["close"].shift()).shift(-1))*1
         y_signal = ((close_df["close"] > close_df["close"].shift()).shift(-1))*1
         y = pd.DataFrame(y_signal).loc[X.index]
 
-        X_train=X[:-100]
-        X_test=X[-100:]
-        y_train=y[:-100]
-        y_test=y[-100:]
+        X_train=X[:-30]
+        X_test=X[-30:]
+        y_train=y[:-30]
+        y_test=y[-30:]
 
         scaler = StandardScaler()
         X_scaler = scaler.fit(X_train)
@@ -282,17 +314,33 @@ if page == 'Algorithm Parameters':
         with left_col:
             money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, predictions_shallow, trade_amount)
             left_fig = px.line(value_on_hand_df, color_discrete_sequence=['green'])
-            left_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df,  mode='lines')
+            labels={'0':'Strategy', 'close':'Not Close'}
+            right_fig.for_each_trace(lambda t: t.update(name = labels[t.name], legendgroup = "Returns", hovertemplate = t.hovertemplate.replace(t.name, labels[t.name])))
+            left_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df,  mode='lines', name='Actual')
             left_fig.update_layout(title_text=ticker + f": Shallow neural, no buy/sell stop")
+            left_fig.update_layout(legend_title_text="Returns")
             st.plotly_chart(left_fig)
 
         with right_col:
             money_on_hand_df, shares_df, value_on_hand_df = results_trade_amount_nostop(start_money, close_df_test, predictions_deep, trade_amount)
             right_fig = px.line(value_on_hand_df, color_discrete_sequence=['green'])
-            right_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df, mode='lines')
+            labels={'0':'Strategy'}
+            right_fig.for_each_trace(lambda t: t.update(name = labels[t.name], legendgroup = "Returns", hovertemplate = t.hovertemplate.replace(t.name, labels[t.name])))
+            right_fig.add_scatter(x = value_on_hand_df.index, y = normalized_close_df, mode='lines', name='Actual')
+            right_fig.update_layout(legend_title_text="Returns")
 
             right_fig.update_layout(title_text=ticker + f": Deep neural, no buy/sell stop")
             st.plotly_chart(right_fig)
+
+        #st.markdown("""---""")
+#        with left_col:
+#            value_on_hand_df = sma_crossover_eval(start_money, cross_df, close_df)
+#            normalized_full_close_df = start_money * close_df["close"]/close_df.iloc[0]["close"]
+#            st.write(normalized_full_close_df)
+#            full_crossovers = px.line(value_on_hand_df)
+#            full_crossovers.add_scatter(normalized_full_close_df, mode='lines')
+#            st.plotly_chart(full_crossovers)
+        st.markdown("""---""")
 
         figs.append(left_fig)
         figs.append(right_fig)
