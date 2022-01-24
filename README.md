@@ -99,6 +99,24 @@ LEGAL DISCLAIMER: This program is for eductional purposes. It is not financial a
 The program is intended to test algorithms and trading strategies that inlcude moving averages, simple moving average crossover signals, and machine learning sentiment analysis from various sources with neural networks.
 
 ---
+## Examples
+
+Example of a relatively high validation accuracy
+![](https://user-images.githubusercontent.com/90786265/150710256-1bca5041-11cb-4a98-9c42-5285aa370d76.png)
+
+Example of a strategy that lost less than the stock
+![](https://github.com/Abhishikaf/sentiment_stocks_trading/blob/main/Screenshot%202022-01-23%20163333.png?raw=true)
+
+Example of a strategy that earned while the stock lost
+![](https://github.com/Abhishikaf/sentiment_stocks_trading/blob/main/Screenshot%202022-01-23%20165019.png?raw=true)
+
+SMA crossover signals trading strategies example: (3 of them beat the stock in this example)
+![](https://github.com/Abhishikaf/sentiment_stocks_trading/blob/main/Screenshot%202022-01-20%20180242.png?raw=true)
+
+Example of SMA crossover signals
+![](https://github.com/Abhishikaf/sentiment_stocks_trading/blob/main/Screenshot%202022-01-23%20173702.png?raw=true)
+
+---
 ## Future Development:
 
 - Allow user to select any stock ticker.
