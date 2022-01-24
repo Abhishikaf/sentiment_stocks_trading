@@ -31,7 +31,7 @@ You will need to create a text file in the program folder labeled `.env` and con
 ```ALPACA_API_KEY = "YOUR-ALPACA-API-KEY-HERE"```
 ```ALPACA_SECRET_KEY = "YOUR-ALPACA-SECRET-KEY-HERE"```
 
-###Additional functionality
+### Additional functionality
 Additional functionality is available if you would like to accumulate sentiment data. CSV files for several stocks are provided with a  small recent set. To get more, you will need to install the following packages: 
 
 - flair
@@ -41,7 +41,7 @@ Additional functionality is available if you would like to accumulate sentiment 
 - textblob
 - segtok
 
-###Rapidapi:
+### Rapidapi:
 
 You  will need an API key for RapidAPI.
 
@@ -74,13 +74,13 @@ The higher the score, the more relevant the headline is for that particular day.
 Since stock markets are sensitive to current affairs, larger events are likely to affect the stock market more.
 Using the relevance score, we add weightage to the sentiment score for each headline.
 
-###VADER
+### VADER
 VADER ( Valence Aware Dictionary for Sentiment Reasoning) is used for text sentiment analysis of unlabelled data, it is sensitive to both polarity (positive/negative) and intensity (strength) of emotion shown. It is available under the library in the NLTK package.
 VADER sentimental analysis is dependent upon a dictionary that maps lexical features to emotion intensities better known as sentiment scores. The sentiment score is obtained by summing up the intensity of each word in the text.
 
 TextBlob is a Naive Bayes Analyzer based text sentiment analysis library. It is a simple API for natural language processing (NLP) tasks such as POS tagging, name extraction, sentiment analysis, translation, classification, and more. Textblob sentiment analyzer returns two properties for a given input sentence: Polarity and Subjectivity. Subjectivity is also a float that lies in the range of [0,1] and refers to opinion, emotion, or judgment.
 
-###Flair
+### Flair
 (https://github.com/flairNLP/flair)
 
 A python library that uses natural language processing for sentiment analysis. It has a pre-trained sentiment analysis module.
